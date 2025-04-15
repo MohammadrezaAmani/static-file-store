@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -euo pipefail
+
+sudo apt update -y
+sudo apt install -y zsh git curl ca-certificates gnupg lsb-release
+
+if ! command -v zsh &> /dev/null; then
+  echo "Zsh installation failed." >&2
+  exit 1
+fi
+
+chsh -s "$(which zsh)"
+
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
+
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+[ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ] || \
+  git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+
+[ -d "$ZSH_CUSTOM/plugins/zsh-autocomplete" ] || \
+  git clone --depth 1 https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM/plugins/zsh-autocomplete"
+
+sed -i 's/plugins=(.*)/plugins=(git zsh-autosuggestions zsh-autocomplete)/' ~/.zshrc || true
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+  sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update -y
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker "$USER"
+
+curl -fsSL https://getmic.ro | bash
+sudo mv micro /usr/local/bin/
+
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -o root -g root -m 644 packages.microsoft.gpg /usr/share/keyrings/
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/packages.microsoft.gpg] \
+https://packages.microsoft.com/repos/code stable main" | \
+sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+
+sudo apt update -y
+sudo apt install -y code
+
+if ! grep -q 'exec zsh' ~/.bashrc; then
+  echo 'exec zsh' >> ~/.bashrc
+fi
+
+echo "Setup complete. Please restart your terminal or run 'exec zsh'."
