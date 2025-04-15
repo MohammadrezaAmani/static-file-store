@@ -24,7 +24,10 @@ ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 [ -d "$ZSH_CUSTOM/plugins/zsh-autocomplete" ] || \
   git clone --depth 1 https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM/plugins/zsh-autocomplete"
 
-sed -i 's/plugins=(.*)/plugins=(git zsh-autosuggestions zsh-autocomplete)/' ~/.zshrc || true
+[ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] || \
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+sed -i 's/plugins=(.*)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' ~/.zshrc || true
 
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
@@ -51,8 +54,6 @@ sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
 sudo apt update -y
 sudo apt install -y code
 
-if ! grep -q 'exec zsh' ~/.bashrc; then
-  echo 'exec zsh' >> ~/.bashrc
-fi
+echo '\nexec zsh' >> ~/.bashrc
 
 echo "Setup complete. Please restart your terminal or run 'exec zsh'."
